@@ -54,9 +54,9 @@ struct procent {		/* Entry in the process table		*/
 	umsg32	prmsg;		/* Message sent to this process		*/
 	bool8	prhasmsg;	/* Nonzero iff msg is valid		*/
 	int16	prdesc[NDESC];	/* Device descriptors for process	*/
-	umsg32  prmsgs[MAX_MSGS];/* Messages sent to the process         */
-	uint32  msg_head;        /* Pointer to head of the message's queue used to retrieve messages */
-	uint32  msg_tail;        /* Pointer to tail of the message's queue used to queue the new messages */        
+	umsg32  *prmsgsptr;     /*  Pointer to the messages sent to the process         */
+	uint32  msg_head;       /* Index to the head of the message's queue used to retrieve messages */
+	uint32  msg_tail;       /* Index to tail of the message's queue used to queue the new messages */        
 };
 
 /* Marker for the top of a process stack (used to help detect overflow)	*/
