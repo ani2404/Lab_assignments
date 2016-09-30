@@ -39,3 +39,32 @@ syscall	send(
 	restore(mask);		/* Restore interrupts */
 	return OK;
 }
+
+syscall sendMsg(pid32 pid, umsg32 msg)
+{
+	intmask mask;
+	struct procent *prptr;
+	
+	mask = disable();
+	if(isbadpid(pid)) {
+		restore(mask);
+		return SYSERR;
+	}
+	
+	prptr = &proctab[pid];
+	
+	if()
+		
+}
+
+
+uint32 sendMsgs(pid32, umsg32*, uint32)
+{
+	
+}
+
+
+uint32 sendnMsg(uint32, pid32*, umsg32)
+{
+	
+}

@@ -23,3 +23,15 @@ umsg32	receive(void)
 	restore(mask);
 	return msg;
 }
+
+
+umsg32 receiveMsg(void)
+{
+	
+}
+
+
+syscall receiveMsgs(umsg32*, uint32)
+{
+	
+}
