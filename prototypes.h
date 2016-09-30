@@ -395,6 +395,12 @@ extern	status	ready(pid32);
 /* in file receive.c */
 extern	umsg32	receive(void);
 
+/* in file receive.c */
+extern umsg32 receiveMsg(void);
+
+/* in file receive.c */
+extern syscall receiveMsgs(umsg32*, uint32);
+
 /* in file recvclr.c */
 extern	umsg32	recvclr(void);
 
@@ -494,6 +500,15 @@ extern	syscall	semreset(sid32, int32);
 
 /* in file send.c */
 extern	syscall	send(pid32, umsg32);
+
+/* in file send.c */
+extern syscall sendMsg(pid32, umsg32);
+
+/* in file send.c */
+extern uint32 sendMsgs(pid32, umsg32*, uint32);
+
+/* in file send.c */
+extern uint32 sendnMsg(uint32, pid32*, umsg32);
 
 /* in file shell.c */
 extern 	process shell(did32);
