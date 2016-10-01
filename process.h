@@ -45,7 +45,7 @@ struct prmsgq {
 	uint32 head; /* Index to the head of the queue */
 	uint32 tail; /* Index to the tail of the queue */
 	uint32 count; /* Count of the messages the receiver is waiting on */
-	umsg32 *msgsptr; /*  Pointer to the messages sent to the process */  
+	umsg32 msgq[MAX_MSGS]; /*  Queue of messages sent to the process */  
 };
 	
 }
