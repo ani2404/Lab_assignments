@@ -59,14 +59,13 @@ syscall receiveMsgs(umsg32* msgs, uint32 msg_count)
 {
 	intmask	mask;			/* Saved interrupt mask		*/
 	struct	procent *prptr;		/* Ptr to process's table entry	*/
-	int32	loop_index = 0;
-	uint32 head,tail;
+	uint32	head,tail,loop_index = 0;
 	
 	mask = disable();
 	prptr = &proctab[currpid];
 	head = prptr->qptr->head;
 	tail = prptr->qptr->tail;
-	if ((head == MAX_MSGS) || (((int)(tail - head)) < msg_count)) {
+	if ((head == MAX_MSGS) || (((tail - head + MAX_MSGS)%MAX_MSGS) < msg_count)) {
 		// Queue is Empty or not sufficient to conusme [msg_count] messgs
 		prptr->prstate = PR_RECQ;
 		prptr->qptr->count = msg_count;
