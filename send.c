@@ -89,7 +89,7 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	intmask mask;
 	struct procent *prptr;
 	int loop_index=0;
-	uint32 tail = prptr->prmsgsptr[TAIL];
+	uint32 tail;
 	
 	mask = disable();
 	if(isbadpid(pid)) {
@@ -98,6 +98,7 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	}
 	
 	prptr = &proctab[pid];
+	tail = = prptr->prmsgsptr[TAIL];
 	for(;(loop_index < msg_count) && (loop_index < MAX_MSGS); loop_index++)
 	{ 
 		if(prptr->prmsgsptr[HEAD] != tail)
