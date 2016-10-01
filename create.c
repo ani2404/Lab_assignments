@@ -79,6 +79,12 @@ pid32	create(
 	*--saddr = (long)0x00000053;	/* CPSR F bit set,		*/
 					/* Supervisor mode		*/
 	prptr->prstkptr = (char *)saddr;
+	
+	prptr->prmsgsptr = (umsg32 *) getmem(MAX_MSGS + 2); // Two for the head and the tail index
+	prptr->prmsgsptr[0] = 0; // Head index set to the start of the queue
+	prptr->prmsgsptr[1] = 0; // Tail index set to the start of the queue
+	prptr->prmsgsptr +=2; // Point to the start of the queue
+	
 	restore(mask);
 	return pid;
 }
