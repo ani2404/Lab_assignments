@@ -53,8 +53,34 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	
 	prptr = &proctab[pid];
 	
-	if()
+	if(prptr->prmsgsptr[HEAD] != prptr->prmsgsptr[TAIL])
+	{
+		//Queue is not full
+		uint32 tail = prptr->prmsgsptr[TAIL];		
+		prptr->prmsgsptr[QUEUE_START + tail] = msg; // Queue the message		
 		
+		if(prptr->prmsgsptr[HEAD] == MAX_MSGS)
+		{
+			// Empty queue is now filled
+			//Update the head index to point to the tail
+			prptr->prmsgsptr[HEAD] = tail;
+		}
+		prptr->prmsgsptr[TAIL] = (++tail % MAX_MSGS); // Update the tail index
+	}
+	else
+	{
+		kprintf("Process[%d]: Unable to send message as Receiver[%d] queue is full \n",getpid(),pid);
+		restore(mask);
+		return SYSERR;
+	}
+		
+	
+	if(prptr->prstate == PR_RECQ)
+	{
+		ready(pid);
+	}
+	restore(mask);
+	return OK;
 }
 
 
