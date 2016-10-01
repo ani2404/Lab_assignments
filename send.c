@@ -44,7 +44,7 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 {
 	intmask mask;
 	struct procent *prptr;
-	uint32 head,tail,count;
+	uint32 head,tail;
 	
 	mask = disable();
 	if(isbadpid(pid)) {
@@ -69,10 +69,10 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	{
 		// Empty queue is now filled
 		//Update the head index to point to the tail
-		head = tail;
+		head = tail++;
 	}
 
-	tail = (++tail % MAX_MSGS); // Update the tail index
+	tail %= MAX_MSGS; // Update the tail index
 	
 	prptr->qptr->head = head;
 	prptr->qptr->tail = tail;
@@ -108,8 +108,8 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 		if(head != tail)
 		{
 			//Queue is not full
-			prptr->qptr->msgq[tail] = msgs[loop_index]; // Queue the message
-			tail = ((++tail)%MAX_MSGS);
+			prptr->qptr->msgq[tail++] = msgs[loop_index]; // Queue the message
+			tail %= MAX_MSGS;
 		}
 		else
 		{
@@ -150,7 +150,7 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 	mask = disable();
 	
 	resched_cntl(DEFER_START);
-	for(;(loop_index < pid_count) && (loop_index < N_PROC); loop_index++)
+	for(;(loop_index < pid_count) && (loop_index < NPROC); loop_index++)
 	{
 		pid = pids[loop_index];
 		if(!isbadpid(pid))
@@ -165,9 +165,9 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 				if(head == MAX_MSGS) {
 					// Empty queue is now filled
 					//Update the head index to point to the tail
-					head = tail;
+					head = tail++;
 				}
-				tail = ((++tail)%MAX_MSGS);
+				tail %= MAX_MSGS;
 				
 				prptr->qptr->head = head;
 				prptr->qptr->tail = tail; // Update the tail index

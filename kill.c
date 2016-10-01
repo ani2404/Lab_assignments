@@ -32,8 +32,10 @@ syscall	kill(
 	freestk(prptr->prstkbase, prptr->prstklen);
 	
 	
-	
+	if(prptr->qptr != (struct prmsgq *)SYSERR)
 	freemem((char *)prptr->qptr,sizeof(struct prmsgq));
+	else
+		kprintf("No heap memory to free for process[%d] \n",pid);
 	
 	switch (prptr->prstate) {
 	case PR_CURR:
