@@ -80,9 +80,10 @@ pid32	create(
 					/* Supervisor mode		*/
 	prptr->prstkptr = (char *)saddr;
 	
-	prptr->prmsgsptr = (umsg32 *) getmem(MAX_MSGS + 2); // Two for the head and the tail index
-	prptr->prmsgsptr[HEAD] = MAX_MSGS; // Head index set to invalid location
-	prptr->prmsgsptr[TAIL] = 0; // Tail index set to the start of the queue
+	prptr->qptr = (struct prmsgq *) getmem(sizeof(struct prmsgq));
+	prptr->qptr->head = MAX_MSGS; // Head index set to invalid location
+	prptr->qptr->tail = 0; // Tail index set to the start of the queue
+	prptr->qptr->count = 0; // Process is waiting on no messages
 	
 	
 	restore(mask);
