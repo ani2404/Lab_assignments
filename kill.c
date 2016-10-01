@@ -31,9 +31,9 @@ syscall	kill(
 	}
 	freestk(prptr->prstkbase, prptr->prstklen);
 	
-	prptr->prmsgsptr -=2; // Point to the start of the heap memory
 	
-	freemem((char *)prptr->prmsgsptr,(MAX_MSGS + 2)); // Two for the head and the tail index
+	
+	freemem((char *)prptr->qptr,sizeof(struct prmsgq));
 	
 	switch (prptr->prstate) {
 	case PR_CURR:
