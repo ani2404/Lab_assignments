@@ -181,7 +181,7 @@ static	void	sysinit()
 		prptr->prname[0] = NULLCH;
 		prptr->prstkbase = NULL;
 		prptr->prprio = 0;
-		prptr->prmsgsptr = NULL;
+		prptr->qptr = NULL;
 	}
 
 	/* Initialize the Null process entry */	
@@ -193,9 +193,10 @@ static	void	sysinit()
 	prptr->prstkbase = getstk(NULLSTK);
 	prptr->prstklen = NULLSTK;
 	prptr->prstkptr = 0;
-	prptr->prmsgsptr = (umsg32 *) getmem(MAX_MSGS + 2); // Two for the head and the tail index
-	prptr->prmsgsptr[HEAD] = MAX_MSGS; // Head index set to invalid location
-	prptr->prmsgsptr[TAIL] = 0; // Tail index set to the start of the queue
+	prptr->qptr = (struct prmsgq *) getmem((sizeof(uint32)*3) + (sizeof(umsg32)*MAX_MSGS));
+	prptr->qptr->head = MAX_MSGS; // Head index set to invalid location
+	prptr->qptr->tail = 0; // Tail index set to the start of the queue
+	prptr->qptr->count = 0; // Process is waiting on no messages
 	currpid = NULLPROC;
 	
 	/* Initialize semaphores */
