@@ -193,7 +193,7 @@ static	void	sysinit()
 	prptr->prstkbase = getstk(NULLSTK);
 	prptr->prstklen = NULLSTK;
 	prptr->prstkptr = 0;
-	prptr->qptr = (struct prmsgq *) getmem((sizeof(uint32)*3) + (sizeof(umsg32)*MAX_MSGS));
+	prptr->qptr = (struct prmsgq *) getmem(sizeof(struct prmsgq));
 	prptr->qptr->head = MAX_MSGS; // Head index set to invalid location
 	prptr->qptr->tail = 0; // Tail index set to the start of the queue
 	prptr->qptr->count = 0; // Process is waiting on no messages
