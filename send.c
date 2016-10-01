@@ -53,19 +53,19 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	
 	prptr = &proctab[pid];
 	
-	if(prptr->prmsgsptr[HEAD] != prptr->prmsgsptr[TAIL])
+	if(prptr->qptr->head != prptr->qptr->tail)
 	{
 		//Queue is not full
-		uint32 tail = prptr->prmsgsptr[TAIL];		
-		prptr->prmsgsptr[QUEUE_START + tail] = msg; // Queue the message		
+		uint32 tail = prptr->qptr->tail;		
+		prptr->qptr->msgq[tail] = msg; // Queue the message		
 		
-		if(prptr->prmsgsptr[HEAD] == MAX_MSGS)
+		if(prptr->qptr->head == MAX_MSGS)
 		{
 			// Empty queue is now filled
 			//Update the head index to point to the tail
-			prptr->prmsgsptr[HEAD] = tail;
+			prptr->qptr->head = tail;
 		}
-		prptr->prmsgsptr[TAIL] = (++tail % MAX_MSGS); // Update the tail index
+		prptr->qptr->tail = (++tail % MAX_MSGS); // Update the tail index
 	}
 	else
 	{
@@ -75,9 +75,12 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	}
 		
 	
-	if(prptr->prstate == PR_RECQ)
+	if(prptr->qptr->count > 0)
 	{
-		ready(pid);
+		// Receiver Process is waiting for messages to be queued 
+		prptr->qptr->count -= 1; // Decrement by 1 as one message is queued
+		if(prptr->qptr->count == 0)
+			ready(pid); // Ready the process as expected count is acheived
 	}
 	restore(mask);
 	return OK;
@@ -98,13 +101,13 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	}
 	
 	prptr = &proctab[pid];
-	tail = prptr->prmsgsptr[TAIL];
+	tail = prptr->qptr->tail;
 	for(;(loop_index < msg_count) && (loop_index < MAX_MSGS); loop_index++)
 	{ 
-		if(prptr->prmsgsptr[HEAD] != tail)
+		if(prptr->qptr->head != tail)
 		{
 			//Queue is not full
-			prptr->prmsgsptr[QUEUE_START + tail] = msgs[loop_index]; // Queue the message
+			prptr->qptr->msgq[tail] = msgs[loop_index]; // Queue the message
 			tail = ((++tail)%MAX_MSGS);
 		}
 		else
@@ -114,18 +117,23 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 		}
 	}
 	
-	if(prptr->prmsgsptr[HEAD] == MAX_MSGS)
+	if(prptr->qptr->head == MAX_MSGS)
 	{
 		// Empty queue is now filled
 		//Update the head index to point to the tail
-		prptr->prmsgsptr[HEAD] = prptr->prmsgsptr[TAIL];
+		prptr->qptr->head = prptr->qptr->tail;
 	}
 	
-	prptr->prmsgsptr[TAIL] = tail; // Update the tail index
+	prptr->qptr->tail = tail; // Update the tail index
 	
-	if(prptr->prstate == PR_RECQ)
+	if(prptr->qptr->count > 0)
 	{
-		ready(pid);
+		// Receiver Process is waiting for messages to be queued 
+		prptr->qptr->count -= loop_index; // Decrement by successfully queued messages
+		if(((int)prptr->qptr->count) <= 0){
+			prptr->qptr->count = 0;
+			ready(pid); // Ready the process as expected count is acheived
+		}		
 	}
 	restore(mask);
 	return loop_index;
@@ -143,23 +151,31 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 	
 	mask = disable();
 	
+	resched_cntl(DEFER_START);
 	for(;(loop_index < pid_count) && (loop_index < N_PROC); loop_index++)
 	{
 		pid = pids[loop_index];
 		if(!isbadpid(pid))
 		{
 			prptr = &proctab[pid];
-			uint32 tail = prptr->prmsgsptr[TAIL];
-			if(prptr->prmsgsptr[HEAD] != tail)
+			uint32 tail = prptr->qptr->tail;
+			if(prptr->qptr->head != tail)
 			{
 				//Queue is not full
-				prptr->prmsgsptr[QUEUE_START + tail] = msg; // Queue the message
-				if(prptr->prmsgsptr[HEAD] == MAX_MSGS) {
+				prptr->qptr->msgq[tail] = msg; // Queue the message
+				if(prptr->qptr->head == MAX_MSGS) {
 					// Empty queue is now filled
 					//Update the head index to point to the tail
-					prptr->prmsgsptr[HEAD] = prptr->prmsgsptr[TAIL];
+					prptr->qptr->head = prptr->qptr->tail;
 				}
-				prptr->prmsgsptr[TAIL] = ((++tail)%MAX_MSGS);
+				prptr->qptr->tail = ((++tail)%MAX_MSGS);
+				
+				if(prptr->qptr->count > 0){
+					// Receiver Process is waiting for messages to be queued 
+					prptr->qptr->count -= 1; // Decrement by 1 as one message is queued
+					if(prptr->qptr->count == 0)
+						ready(pid); // Ready the process as expected count is acheived
+				}	
 				success++;
 			}
 			//else
@@ -169,13 +185,7 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 		}
 	}
 	
-/*
-	resched_cntl(DEFER_START);
-	if(prptr->prstate == PR_RECQ)
-	{
-		ready(pid);
-	}
-	resched_cntl(DEFER_STOP); */
+	resched_cntl(DEFER_STOP);
 	restore(mask);
 	return success;	
 }
