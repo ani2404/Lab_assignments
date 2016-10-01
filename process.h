@@ -40,9 +40,20 @@
 #define NDESC		5	/* must be odd to make procent 4N bytes	*/
 
 #define MAX_MSGS        10
+
+struct prmsgq {
+	uint32 head; /* Index to the head of the queue */
+	uint32 tail; /* Index to the tail of the queue */
+	uint32 count; /* Count of the messages the receiver is waiting on */
+	umsg32 *msgsptr; /*  Pointer to the messages sent to the process */  
+};
+	
+}
+/*
 #define HEAD            0
 #define TAIL            1
 #define QUEUE_START     2
+*/
 
 /* Definition of the process table (multiple of 32 bits) */
 
@@ -58,7 +69,7 @@ struct procent {		/* Entry in the process table		*/
 	umsg32	prmsg;		/* Message sent to this process		*/
 	bool8	prhasmsg;	/* Nonzero iff msg is valid		*/
 	int16	prdesc[NDESC];	/* Device descriptors for process	*/
-	umsg32  *prmsgsptr;     /*  Pointer to the messages sent to the process */      
+	prmsgq  *qptr;     /*  Pointer to the queue of messages sent to the process */      
 };
 
 /* Marker for the top of a process stack (used to help detect overflow)	*/
