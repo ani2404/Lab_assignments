@@ -44,6 +44,7 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 {
 	intmask mask;
 	struct procent *prptr;
+	uint32 head,tail,count;
 	
 	mask = disable();
 	if(isbadpid(pid)) {
@@ -52,35 +53,35 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	}
 	
 	prptr = &proctab[pid];
+	head = prptr->qptr->head;
+	tail = prptr->qptr->tail;
 	
-	if(prptr->qptr->head != prptr->qptr->tail)
-	{
-		//Queue is not full
-		uint32 tail = prptr->qptr->tail;		
-		prptr->qptr->msgq[tail] = msg; // Queue the message		
-		
-		if(prptr->qptr->head == MAX_MSGS)
-		{
-			// Empty queue is now filled
-			//Update the head index to point to the tail
-			prptr->qptr->head = tail;
-		}
-		prptr->qptr->tail = (++tail % MAX_MSGS); // Update the tail index
-	}
-	else
-	{
+	if(head == tail){
 		kprintf("Process[%d]: Unable to send message as Receiver[%d] queue is full \n",getpid(),pid);
 		restore(mask);
 		return SYSERR;
 	}
+	
+	//Queue is not full		
+	prptr->qptr->msgq[tail] = msg; // Queue the message		
+		
+	if(head == MAX_MSGS)
+	{
+		// Empty queue is now filled
+		//Update the head index to point to the tail
+		head = tail;
+	}
+
+	tail = (++tail % MAX_MSGS); // Update the tail index
+	
+	prptr->qptr->head = head;
+	prptr->qptr->tail = tail;
 		
 	
-	if(prptr->qptr->count > 0)
-	{
-		// Receiver Process is waiting for messages to be queued 
-		prptr->qptr->count -= 1; // Decrement by 1 as one message is queued
-		if(prptr->qptr->count == 0)
-			ready(pid); // Ready the process as expected count is acheived
+	if(((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)
+	{ 
+		prptr->qptr->count = 0;
+		ready(pid); // Ready the process as expected count is acheived
 	}
 	restore(mask);
 	return OK;
@@ -91,8 +92,7 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 {
 	intmask mask;
 	struct procent *prptr;
-	int loop_index=0;
-	uint32 tail;
+	uint32 head,tail,loop_index=0;
 	
 	mask = disable();
 	if(isbadpid(pid)) {
@@ -102,9 +102,10 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	
 	prptr = &proctab[pid];
 	tail = prptr->qptr->tail;
+	head = prptr->qptr->head;
 	for(;(loop_index < msg_count) && (loop_index < MAX_MSGS); loop_index++)
 	{ 
-		if(prptr->qptr->head != tail)
+		if(head != tail)
 		{
 			//Queue is not full
 			prptr->qptr->msgq[tail] = msgs[loop_index]; // Queue the message
@@ -117,24 +118,22 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 		}
 	}
 	
-	if(prptr->qptr->head == MAX_MSGS)
+	if(head == MAX_MSGS)
 	{
 		// Empty queue is now filled
 		//Update the head index to point to the tail
-		prptr->qptr->head = prptr->qptr->tail;
+		head = prptr->qptr->tail;
 	}
 	
+	prptr->qptr->head = head;
 	prptr->qptr->tail = tail; // Update the tail index
 	
-	if(prptr->qptr->count > 0)
-	{
-		// Receiver Process is waiting for messages to be queued 
-		prptr->qptr->count -= loop_index; // Decrement by successfully queued messages
-		if(((int)prptr->qptr->count) <= 0){
-			prptr->qptr->count = 0;
-			ready(pid); // Ready the process as expected count is acheived
-		}		
+	if(((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)
+	{ 
+		prptr->qptr->count = 0;
+		ready(pid); // Ready the process as expected count is acheived
 	}
+	
 	restore(mask);
 	return loop_index;
 	
@@ -145,8 +144,7 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 {
 	intmask mask;
 	struct procent *prptr;
-	int loop_index=0;
-	uint32 success = 0;
+	uint32 head,tail,success = 0,loop_index=0;
 	pid32 pid;
 	
 	mask = disable();
@@ -158,23 +156,26 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 		if(!isbadpid(pid))
 		{
 			prptr = &proctab[pid];
-			uint32 tail = prptr->qptr->tail;
-			if(prptr->qptr->head != tail)
+			tail = prptr->qptr->tail;
+			head = prptr->qptr->head;
+			if(head != tail)
 			{
 				//Queue is not full
 				prptr->qptr->msgq[tail] = msg; // Queue the message
-				if(prptr->qptr->head == MAX_MSGS) {
+				if(head == MAX_MSGS) {
 					// Empty queue is now filled
 					//Update the head index to point to the tail
-					prptr->qptr->head = prptr->qptr->tail;
+					head = tail;
 				}
-				prptr->qptr->tail = ((++tail)%MAX_MSGS);
+				tail = ((++tail)%MAX_MSGS);
 				
-				if(prptr->qptr->count > 0){
-					// Receiver Process is waiting for messages to be queued 
-					prptr->qptr->count -= 1; // Decrement by 1 as one message is queued
-					if(prptr->qptr->count == 0)
-						ready(pid); // Ready the process as expected count is acheived
+				prptr->qptr->head = head;
+				prptr->qptr->tail = tail; // Update the tail index
+				
+				if(((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)
+				{ 
+					prptr->qptr->count = 0;
+					ready(pid); // Ready the process as expected count is acheived
 				}	
 				success++;
 			}
