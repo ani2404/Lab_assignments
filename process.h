@@ -40,6 +40,9 @@
 #define NDESC		5	/* must be odd to make procent 4N bytes	*/
 
 #define MAX_MSGS        10
+#define HEAD            0
+#define TAIL            1
+#define QUEUE_START     2
 
 /* Definition of the process table (multiple of 32 bits) */
 
