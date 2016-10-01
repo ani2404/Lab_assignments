@@ -98,13 +98,13 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	}
 	
 	prptr = &proctab[pid];
-	tail = = prptr->prmsgsptr[TAIL];
+	tail = prptr->prmsgsptr[TAIL];
 	for(;(loop_index < msg_count) && (loop_index < MAX_MSGS); loop_index++)
 	{ 
 		if(prptr->prmsgsptr[HEAD] != tail)
 		{
 			//Queue is not full
-			prptr->prmsgsptr[QUEUE_START + tail] = msg; // Queue the message
+			prptr->prmsgsptr[QUEUE_START + tail] = msgs[loop_index]; // Queue the message
 			tail = ((++tail)%MAX_MSGS);
 		}
 		else
@@ -133,7 +133,49 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 }
 
 
-uint32 sendnMsg(uint32, pid32*, umsg32)
+uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 {
+	intmask mask;
+	struct procent *prptr;
+	int loop_index=0;
+	uint32 success = 0;
+	pid32 pid;
 	
+	mask = disable();
+	
+	for(;(loop_index < pid_count) && (loop_index < N_PROC); loop_index++)
+	{
+		pid = pids[loop_index];
+		if(!isbadpid(pid))
+		{
+			prptr = &proctab[pid];
+			uint32 tail = prptr->prmsgsptr[TAIL];
+			if(prptr->prmsgsptr[HEAD] != tail)
+			{
+				//Queue is not full
+				prptr->prmsgsptr[QUEUE_START + tail] = msg; // Queue the message
+				if(prptr->prmsgsptr[HEAD] == MAX_MSGS) {
+					// Empty queue is now filled
+					//Update the head index to point to the tail
+					prptr->prmsgsptr[HEAD] = prptr->prmsgsptr[TAIL];
+				}
+				prptr->prmsgsptr[TAIL] = ((++tail)%MAX_MSGS);
+				success++;
+			}
+			//else
+			//{
+			//kprintf("Process[%d]: Unable to send messages as Receiver[%d] queue is full \n",getpid(),pid);
+			//}
+		}
+	}
+	
+/*
+	resched_cntl(DEFER_START);
+	if(prptr->prstate == PR_RECQ)
+	{
+		ready(pid);
+	}
+	resched_cntl(DEFER_STOP); */
+	restore(mask);
+	return success;	
 }
