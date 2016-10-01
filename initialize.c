@@ -194,9 +194,8 @@ static	void	sysinit()
 	prptr->prstklen = NULLSTK;
 	prptr->prstkptr = 0;
 	prptr->prmsgsptr = (umsg32 *) getmem(MAX_MSGS + 2); // Two for the head and the tail index
-	prptr->prmsgsptr[0] = 0; // Head index set to the start of the queue
-	prptr->prmsgsptr[1] = 0; // Tail index set to the start of the queue
-	prptr->prmsgsptr +=2; // Point to the start of the queue
+	prptr->prmsgsptr[HEAD] = MAX_MSGS; // Head index set to invalid location
+	prptr->prmsgsptr[TAIL] = 0; // Tail index set to the start of the queue
 	currpid = NULLPROC;
 	
 	/* Initialize semaphores */
