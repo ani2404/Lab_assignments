@@ -57,7 +57,7 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	tail = prptr->qptr->tail;
 	
 	if(head == tail){
-		kprintf("Process[%d]: Unable to send message as Receiver[%d] queue is full \n",getpid(),pid);
+		//kprintf("Process[%d]: Unable to send message as Receiver[%d] queue is full \n",getpid(),pid);
 		restore(mask);
 		return SYSERR;
 	}
@@ -71,7 +71,7 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 		// Empty queue is now filled
 		//Update the head index to point to the tail
 		head = tail;
-		kprintf("Empty queue, head set to %d",head);
+		//kprintf("Empty queue, head set to %d",head);
 	}
 	tail++;
 
@@ -79,12 +79,12 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	
 	prptr->qptr->head = head;
 	prptr->qptr->tail = tail;
-		
 	
-	if((((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count) && prptr->prstate == PR_RECQ)
+	if(prptr->prstate == PR_RECQ && ((tail==head) || (((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)))
 	{ 
+ 		// Ready the process as expected count is acheived
 		prptr->qptr->count = 0;
-		ready(pid); // Ready the process as expected count is acheived
+		ready(pid);
 	}
 	restore(mask);
 	return OK;
@@ -131,10 +131,11 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	prptr->qptr->head = head;
 	prptr->qptr->tail = tail; // Update the tail index
 	
-	if((((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count) && prptr->prstate == PR_RECV)
+	if(prptr->prstate == PR_RECQ && ((tail == head) || (((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)))
 	{ 
+		// Ready the process as expected count is acheived
 		prptr->qptr->count = 0;
-		ready(pid); // Ready the process as expected count is acheived
+		ready(pid);
 	}
 	
 	restore(mask);
@@ -176,10 +177,11 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 				prptr->qptr->head = head;
 				prptr->qptr->tail = tail; // Update the tail index
 				
-				if((((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count) && prptr->prstate == PR_RECV)
+				if(prptr->prstate == PR_RECQ && ((tail==head) || (((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)))
 				{ 
+					// Ready the process as expected count is acheived
 					prptr->qptr->count = 0;
-					ready(pid); // Ready the process as expected count is acheived
+					ready(pid);
 				}	
 				success++;
 			}
