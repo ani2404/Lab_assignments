@@ -69,8 +69,9 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	{
 		// Empty queue is now filled
 		//Update the head index to point to the tail
-		head = tail++;
+		head = tail;
 	}
+	tail++;
 
 	tail %= MAX_MSGS; // Update the tail index
 	
@@ -165,8 +166,9 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 				if(head == MAX_MSGS) {
 					// Empty queue is now filled
 					//Update the head index to point to the tail
-					head = tail++;
+					head = tail;
 				}
+				tail++;
 				tail %= MAX_MSGS;
 				
 				prptr->qptr->head = head;
