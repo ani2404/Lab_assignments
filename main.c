@@ -93,7 +93,7 @@ process process2(void)
 process process3(void)
 {
 	uint32 msg_count = 1,i=0,result;
-	umsg32 msg_buff[MAX_MSGS]={0},msg;
+	umsg32 msg_buff[MAX_MSGS]={0},msg,pid_buff[2];
 	
 	msg = 21;
 	kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg);
@@ -139,6 +139,14 @@ process process3(void)
 		kprintf("Sender[2]: Unable to send message as the Receiver[2] queue is full \n");
 	
 	wait(s2);
+	
+	pid_buff[0] = p4;
+	pid_buff[1]= -1;
+	
+	result = sendnMsg(2,pid_buff,55);
+	
+	kprintf("Sender[2]: Successfuly sent message of %u processes of total %u processes \n",result,2);
+	
 	
 	kill(p4);
 	semdelete(s1);
