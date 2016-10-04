@@ -7,10 +7,10 @@ sid32 s1,s2;
 
 process process1(void)
 {
+       umsg32 msg = 50;
 	while(1)
 	{
-		wait(s1);
-		umsg32 msg = receiveMsg();
+		msg = receiveMsg();
 		kprintf("Receiver[1]: Message Received is %d \n",msg);
 		signal(s2);
 	}	
@@ -59,7 +59,6 @@ process process2(void)
 		
 	kprintf("Sender[1]: Successfuly sent %u messages of %u messages to Receiver[1] \n",result,msg_count);
 	
-	signal(s1);
 	wait(s2);
 	
 	msg_count = 2;
@@ -93,7 +92,8 @@ process process2(void)
 process process3(void)
 {
 	uint32 msg_count = 1,i=0,result;
-	umsg32 msg_buff[MAX_MSGS]={0},msg,pid_buff[2];
+	umsg32 msg_buff[MAX_MSGS]={0},msg;
+        pid32 pid_buff[2];
 	
 	msg = 21;
 	kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg);
@@ -128,8 +128,7 @@ process process3(void)
 		
 	kprintf("Sender[2]: Successfuly sent %u messages of %u messages to Receiver[2] \n",result,msg_count);
 	
-	signal(s1);
-	
+		
 	msg = 12;
 	kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg);
 	result = sendMsg(p2,msg);
