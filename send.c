@@ -179,10 +179,14 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 				}	
 				success++;
 			}
-			//else
-			//{
-			//kprintf("Process[%d]: Unable to send messages as Receiver[%d] queue is full \n",getpid(),pid);
-			//}
+			else
+			{
+				kprintf("Process[%d]: Unable to send messages as Receiver[%d] queue is full \n",getpid(),pid);
+			}
+		}
+		else
+		{
+			kprintf("Process[%d]: Invalid Receiver process id: %d \n",pid);	
 		}
 	}
 	
