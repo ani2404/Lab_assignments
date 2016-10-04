@@ -67,9 +67,11 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 		
 	if(head == MAX_MSGS)
 	{
+		
 		// Empty queue is now filled
 		//Update the head index to point to the tail
 		head = tail;
+		kprintf("Empty queue, head set to %d",head);
 	}
 	tail++;
 
