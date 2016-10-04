@@ -192,7 +192,7 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 		}
 		else
 		{
-			kprintf("Process[%d]: Invalid Receiver process id: %d \n",pid);	
+			kprintf("Process[%d]: Invalid Receiver process id: %d \n",getpid(),pid);	
 		}
 	}
 	
