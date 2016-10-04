@@ -30,11 +30,11 @@ umsg32 receiveMsg(void)
 	intmask	mask;			/* Saved interrupt mask		*/
 	struct	procent *prptr;		/* Ptr to process's table entry	*/
 	umsg32	msg;			/* Message to return		*/
-	uint32 *head = &prptr->qptr->head;
+	uint32 *head;
 	
 	mask = disable();
 	prptr = &proctab[currpid];
-	
+	head = &prptr->qptr->head;
 	if (*head == MAX_MSGS) {
 		// Queue is Empty
 		prptr->prstate = PR_RECQ;
@@ -61,11 +61,13 @@ syscall receiveMsgs(umsg32* msgs, uint32 msg_count)
 	intmask	mask;			/* Saved interrupt mask		*/
 	struct	procent *prptr;		/* Ptr to process's table entry	*/
 	uint32	loop_index = 0;
-	uint32 *head = &prptr->qptr->head;
-	uint32 *tail = &prptr->qptr->tail;
+	uint32 *head;
+	uint32 *tail;
 	
 	mask = disable();
-	prptr = &proctab[currpid];
+	prptr = &proctab[currpid];	
+	head = &prptr->qptr->head;
+	tail = &prptr->qptr->tail;
 	if ((*head == MAX_MSGS) || ((*head != *tail) && (((*tail - *head + MAX_MSGS)%MAX_MSGS) < msg_count))) {
 		// Queue is Empty or not sufficient to conusme [msg_count] messgs
 		prptr->prstate = PR_RECQ;
