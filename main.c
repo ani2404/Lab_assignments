@@ -10,7 +10,7 @@ process process1(void)
 	while(1)
 	{
 		umsg32 msg = receiveMsg();
-		kprintf("Message Received is %d \n",msg);
+		kprintf("Receiver[1]: Message Received is %d \n",msg);
 	}	
 }
 
@@ -23,7 +23,7 @@ process process4(void)
 		int i=0;
 		receiveMsgs(msg,msg_count);
 		while(i < msg_count){
-			kprintf("Message Received is %d \n",msg[i++]);
+			kprintf("Receiver[2]: Message Received is %d \n",msg[i++]);
 		}
 		msg_count++;
 		msg_count %= MAX_MSGS;
@@ -32,40 +32,65 @@ process process4(void)
 
 process process2(void)
 {
-	wait(s1);
 	uint32 msg_count = 1;
 	while(msg_count < MAX_MSGS)
-	umsg32 msg = (umsg32)"A";
-	kprintf("Sending Message "%d" to Process[%d] \n",msg,p1);
-	int32 result = sendMsg(p1,msg);
-	if(result)
-		kprintf("Message "%d" successfully sent to Process[%d] \n",msg,p1);
-	else
-		kprintf("Unable to send message as the receiver process[%d] queue is full \n",p1);
+	{
+		wait(s1);
+		umsg32 msg = (umsg32)"A";
+		kprintf("Sender[1]: Sending Message "%d" to Receiver[1] \n",msg);
+		int32 result = sendMsg(p1,msg);
+		if(result)
+			kprintf("Sender[1]: Message "%d" successfully sent to Receiver[1] \n",msg);
+		else
+			kprintf("Sender[1]: Unable to send message as the Receiver[1] queue is full \n");
 	
 	
-	umsg32 msg = (umsg32)"A";
-	kprintf("Sending Message "%d" to Process[%d] \n",msg,p1);
-	int32 result = sendMsgs(p1,msg);
-	if(result)
-		kprintf("Message "%d" successfully sent to Process[%d] \n",msg,p1);
-	else
-		kprintf("Unable to send message as the receiver process[%d] queue is full \n",p1)
-	
-	signal(s2);
+	    	umsg32 msg_buff[msg_count] = {0};
+		uint32 i = 0;
+		while(i < msg_count){
+			msg_buff[i] = i;
+			kprintf("Sender[1]: Sending Message "%d" to Receiver[2] \n",msg_buff[i++]);
+		}
+		
+		uint32 result = sendMsgs(p2,msg_buff,msg_count);
+		
+		kprintf("Sender[1]: Successfuly sent %u messages of %u messages to Receiver[2] \n",result,msg_count);
+		msg_count++;	
+		signal(s2);
+	}
 }
 
 process process3(void)
 {
-	wait(s2);
-	umsg32 msg = (umsg32)"N";
-	kprintf("Sending Message "%d" to Process[%d] \n",msg,p1);
-	int32 result = sendMsg(p1,msg);
-	if(result)
-		kprintf("Message "%d" successfully sent to Process[%d] \n",msg,p1);
-	else
-		kprintf("Unable to send message as the receiver process[%d] queue is full \n",p1);
-	signal(s1);
+	uint32 msg_count = 1;
+	while(msg_count < MAX_MSGS)
+	{
+		wait(s2);
+		umsg32 msg = (umsg32)"N";
+		kprintf("Sending Message "%d" to Process[%d] \n",msg,p2);
+		int32 result = sendMsg(p2,msg);
+		if(result)
+			kprintf("Sender[2]: Message "%d" successfully sent to Receiver[2] \n",msg);
+		else
+			kprintf("Sender[2]: Unable to send message as the Receiver[2] queue is full \n");
+	
+	
+	    	umsg32 msg_buff[msg_count] = {0};
+		uint32 i = 0;
+		while(i < msg_count){
+			msg_buff[i] = i;
+			kprintf("Sender[2]: Sending Message "%d" to Receiver[1] \n",msg_buff[i++]);
+		}
+		
+		uint32 result = sendMsgs(p1,msg_buff,msg_count);
+		
+		kprintf("Sender[2]: Successfuly sent %u messages of %u messages to Receiver[1] \n",result,msg_count);
+		msg_count++;	
+		signal(s1);
+	}
+	
+	kill(p1);
+	kill(p4);
 	
 }
 
