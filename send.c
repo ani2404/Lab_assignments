@@ -79,7 +79,7 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	prptr->qptr->tail = tail;
 		
 	
-	if(((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)
+	if((((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count) && prptr->prstate == PR_RECQ)
 	{ 
 		prptr->qptr->count = 0;
 		ready(pid); // Ready the process as expected count is acheived
@@ -129,7 +129,7 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	prptr->qptr->head = head;
 	prptr->qptr->tail = tail; // Update the tail index
 	
-	if(((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)
+	if((((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count) && prptr->prstate == PR_RECV)
 	{ 
 		prptr->qptr->count = 0;
 		ready(pid); // Ready the process as expected count is acheived
@@ -174,7 +174,7 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 				prptr->qptr->head = head;
 				prptr->qptr->tail = tail; // Update the tail index
 				
-				if(((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count)
+				if((((tail - head + MAX_MSGS)%MAX_MSGS) >= prptr->qptr->count) && prptr->prstate == PR_RECV)
 				{ 
 					prptr->qptr->count = 0;
 					ready(pid); // Ready the process as expected count is acheived
