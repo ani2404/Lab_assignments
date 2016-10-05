@@ -57,7 +57,6 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 	tail = prptr->qptr->tail;
 	
 	if(head == tail){
-		//kprintf("Process[%d]: Unable to send message as Receiver[%d] queue is full \n",getpid(),pid);
 		restore(mask);
 		return SYSERR;
 	}
@@ -71,7 +70,6 @@ syscall sendMsg(pid32 pid, umsg32 msg)
 		// Empty queue is now filled
 		//Update the head index to point to the tail
 		head = tail;
-		//kprintf("Empty queue, head set to %d",head);
 	}
 	tail++;
 
@@ -116,7 +114,6 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 		}
 		else
 		{
-			//kprintf("Process[%d]: Unable to send messages as Receiver[%d] queue is full \n",getpid(),pid);
 			break;
 		}
 	}
@@ -139,7 +136,7 @@ uint32 sendMsgs(pid32 pid, umsg32* msgs, uint32 msg_count)
 	}
 	
 	restore(mask);
-	return loop_index;
+	return loop_index == 0 ? SYSERR : loop_index;
 	
 }
 
@@ -187,7 +184,7 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 			}
 			else
 			{
-				kprintf("Process[%d]: Unable to send messages as Receiver[%d] queue is full \n",getpid(),pid);
+				kprintf("Process[%d]: Unable to send messages as Process[%d] queue is full \n",getpid(),pid);
 			}
 		}
 		else
@@ -198,5 +195,5 @@ uint32 sendnMsg(uint32 pid_count, pid32* pids, umsg32 msg)
 	
 	resched_cntl(DEFER_STOP);
 	restore(mask);
-	return success;	
+	return success == 0 ? SYSERR : success;
 }

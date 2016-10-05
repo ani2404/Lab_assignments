@@ -3,172 +3,164 @@
 #include <xinu.h>
 
 pid32 p1,p2,p3,p4;
-sid32 s1,s2;
-
-process process1(void)
-{
-       umsg32 msg = 50;
-	while(1)
-	{
-		msg = receiveMsg();
-		kprintf("Receiver[1]: Message Received is %d \n",msg);
-		signal(s2);
-	}	
-}
-
-process process4(void)
-{
-	uint32 msg_count = 7,i=0;
-	umsg32 msg[MAX_MSGS]={0};
-	while(1)
-	{
-		i=0;
-		wait(s1);
-		receiveMsgs(msg,msg_count);
-		while(i < msg_count){
-			kprintf("Receiver[2]: Message Received is %d \n",msg[i++]);
-		}
-		signal(s2);
-
-	}	
-}
+sid32 s1,s2,s3;
 
 process process2(void)
 {
-	uint32 msg_count = 1,i=0,result;
-	umsg32 msg_buff[MAX_MSGS]={0},msg;
-pid32 pid_buff[2];
-	
-	msg = 21;
-	kprintf("Sender[1]: Sending Message '%d' to Receiver[1] \n",msg);
-	result = sendMsg(p1,msg);
-	if(result)
-		kprintf("Sender[1]: Message '%d' successfully sent to Receiver[1] \n",msg);
-	else
-		kprintf("Sender[1]: Unable to send message as the Receiver[1] queue is full \n");
-	
-	wait(s2);
-	
-	msg_count = 10;
-	i = 0;
-	while(i < msg_count){
-		msg_buff[i] = i;
-		kprintf("Sender[1]: Sending Message '%d' to Receiver[1] \n",msg_buff[i++]);
-	}
-		
-	result = sendMsgs(p1,msg_buff,msg_count);
-		
-	kprintf("Sender[1]: Successfuly sent %u messages of %u messages to Receiver[1] \n",result,msg_count);
-	
-	wait(s2);
-	
-	msg_count = 2;
-	i = 0;
-	while(i < msg_count){
-		msg_buff[i] = i;
-		kprintf("Sender[1]: Sending Message '%d' to Receiver[1] \n",msg_buff[i++]);
-	}
-		
-	result = sendMsgs(p1,msg_buff,msg_count);
-		
-	kprintf("Sender[1]: Successfuly sent %u messages of %u messages to Receiver[1] \n",result,msg_count);
-	
-	msg = 12;
-	kprintf("Sender[1]: Sending Message '%d' to Receiver[1] \n",msg);
-	result = sendMsg(p1,msg);
-	if(result)
-		kprintf("Sender[1]: Message '%d' successfully sent to Receiver[1] \n",msg);
-	else
-		kprintf("Sender[1]: Unable to send message as the Receiver[1] queue is full \n");
-
-        wait(s2);
-
-	pid_buff[0] = p1;
-	pid_buff[1]= -1;
-	
-	result = sendnMsg(2,pid_buff,55);
-	
-	kprintf("Sender[2]: Successfuly sent message to %u processes of total %u processes \n",result,2);
-
-	wait(s2);
-	
-	kill(p1);
-	semreset(s1,1);
-	semreset(s2,0);
-	resume(p3);
-	resume(p4);
-	
-   	return OK;
+    umsg32 msg;
+	while(1)
+	{
+		wait(s2);
+		msg = receiveMsg();
+		kprintf("Process[%d]: Message Received is %d \n",getpid(),msg);
+		signal(s1);
+	}	
 }
 
 process process3(void)
 {
+	uint32 msg_count = 10,i=0;
+	umsg32 msg[MAX_MSGS]={0};
+	while(1)
+	{
+		i=0;
+		wait(s3);
+		receiveMsgs(msg,msg_count);
+		while(i < msg_count){
+			kprintf("Process[%d]: Message Received is %d \n",getpid(),msg[i++]);
+		}
+		signal(s1);
+
+	}	
+}
+
+process process1(void)
+{
 	uint32 msg_count = 1,i=0,result;
 	umsg32 msg_buff[MAX_MSGS]={0},msg;
-        
+	pid32 pid_buff[3];
+	static int counter = 0;
 	
-	msg = 21;
-	kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg);
-	result = sendMsg(p4,msg);
-	if(result)
-		kprintf("Sender[2]: Message '%d' successfully sent to Receiver[2] \n",msg);
-	else
-		kprintf("Sender[2]: Unable to send message as the Receiver[2] queue is full \n");
+	wait(s1);
 	
-	
-	msg_count = 6;
+	msg_count = 10;
 	i = 0;
 	while(i < msg_count){
-		msg_buff[i] = i;
-		kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg_buff[i++]);
+		msg_buff[i] = ++counter;
+		kprintf("Process[%d]: Sending Message '%d' to Process[%d] \n",getpid(),msg_buff[i++],p3);
 	}
-		
-	result = sendMsgs(p4,msg_buff,msg_count);
-		
-	kprintf("Sender[2]: Successfuly sent %d messages of %u messages to Receiver[2] \n",result,msg_count);
 	
-	wait(s2);
+	// Receiver 2 Buffer is filled
+	result = sendMsgs(p3,msg_buff,msg_count);
 	
-	msg_count = 6;
+	if(result != SYSERR)
+	{
+		kprintf("Process[%d]: Successfuly sent %u messages of %u messages to Process[%d] \n",getpid(),result,msg_count,p3);		
+	}
+	else
+		kprintf("Process[%d]: Unable to send message as the Process[%d] queue is full \n",getpid(),p3);
+	
+	//SendnMsg to empty buffer, full buffer and invalid pid
+	
+	pid_buff[0] = p2; // empty buffer
+	pid_buff[1] = p3; // full buffer
+	pid_buff[2]= -1; // invalid pid
+	
+	kprintf("Process[%d]: Sending message '55'  to Process[%d], Process[%d], Process[%d] \n",getpid(),p2,p3,-1);
+	result = sendnMsg(3,pid_buff,55);
+	
+	if(result != SYSERR)
+		kprintf("Process[%d]: Successfuly sent message to %d processes of total %u processes \n",getpid(),result,3);
+	else
+		kprintf("Process[%d]: Unable to send message to any process \n",getpid());
+
+
+    	signal(s2); // Receiver 1 consumes message
+    	signal(s3); // Receiver 2 consumes message
+
+	// Both receivers should consume
+	wait(s1);	
+	wait(s1);
+	
+	
+	//Send message using sendMsg, sendMsgs
+	
+	
+	msg = ++counter;
+	kprintf("Process[%d]: Sending Message '%d' to Process[%d] \n",getpid(),msg,p2);
+	result = sendMsg(p2,msg);
+	if(result != SYSERR)
+		kprintf("Process[%d]: Message '%d' successfully sent to Process[%d] \n",getpid(),msg,p2);
+	else
+		kprintf("Process[%d]: Unable to send message as the Process[%d] queue is full \n",getpid(),p2);
+	
+	signal(s2);
+	wait(s1);
+	
+	msg_count = 10;
 	i = 0;
 	while(i < msg_count){
-		msg_buff[i] = i;
-		kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg_buff[i++]);
+		msg_buff[i] = ++counter;
+		kprintf("Process[%d]: Sending Message '%d' to Process[%d] \n",getpid(),msg_buff[i++],p3);
 	}
 		
-	result = sendMsgs(p4,msg_buff,msg_count);
+	result = sendMsgs(p3,msg_buff,msg_count);
 		
-	kprintf("Sender[2]: Successfuly sent %d messages of %u messages to Receiver[2] \n",result,msg_count);
-	
-	signal(s1);
-		
-	msg = 12;
-	kprintf("Sender[2]: Sending Message '%d' to Receiver[2] \n",msg);
-	result = sendMsg(p4,msg);
-	if(result)
-		kprintf("Sender[2]: Message '%d' successfully sent to Receiver[2] \n",msg);
+	if(result != SYSERR)
+	{
+		kprintf("Process[%d]: Successfuly sent %u messages of %u messages to Process[%d] \n",getpid(),result,msg_count,p3);		
+	}
 	else
-		kprintf("Sender[2]: Unable to send message as the Receiver[2] queue is full \n");
-	
-	wait(s2);
+		kprintf("Process[%d]: Unable to send message as the Process[%d] queue is full \n",getpid(),p3);
 	
 	
-	kill(p4);
-	semdelete(s1);
-	semdelete(s2);
-	return OK;
+	msg = ++counter;
+	kprintf("Process[%d]: Sending Message '%d' to Process[%d] \n",getpid(),msg,p3);
+	result = sendMsg(p3,msg);
+	if(result != SYSERR)
+		kprintf("Process[%d]: Message '%d' successfully sent to Process[%d] \n",getpid(),msg,p3);
+	else
+		kprintf("Process[%d]: Unable to send message as the Process[%d] queue is full \n",getpid(),p3);
 	
+	
+	msg_count = 1;
+	i = 0;
+	while(i < msg_count){
+		msg_buff[i] = ++counter;
+		kprintf("Process[%d]: Sending Message '%d' to Process[%d] \n",getpid(),msg_buff[i++],p3);
+	}
+		
+	result = sendMsgs(p3,msg_buff,msg_count);
+		
+	if(result != SYSERR)
+	{
+		kprintf("Process[%d]: Successfuly sent %u messages of %u messages to Process[%d] \n",getpid(),result,msg_count,p3);		
+	}
+	else
+		kprintf("Process[%d]: Unable to send message as the Process[%d] queue is full \n",getpid(),p3);
+	
+	signal(s2);
+	signal(s3);
+	
+	wait(s1);
+	wait(s1);
+	
+	
+	kill(p2);
+	kill(p3);
+	
+   	return OK;
 }
 
 process	main(void)
 {
 
-	p1 = create(process1, 8192, 51, "process1", 0);
-	p2 = create(process2, 8192, 50, "process2", 0);
-	p3 = create(process3, 8192, 50, "process3", 0);
-	p4 = create(process4, 8192, 51, "process4", 0);
+	p1 = create(process1, 8192, 50, "sender1", 0);
+	//p2 = create(process2, 8192, 50, "sender2", 0);
+	p2 = create(process2, 8192, 50, "receiver1", 0);
+	p3 = create(process3, 8192, 50, "receiver2", 0);
 
-	if(isbadpid(p1) || isbadpid(p2) || isbadpid(p3) || isbadpid(p4))
+	if(isbadpid(p1) || isbadpid(p2) || isbadpid(p3))
 	{
 		kprintf("Unable to create process in main \n");
 		return SYSERR;
@@ -176,8 +168,9 @@ process	main(void)
 	
 	s1 = semcreate(1);
 	s2 = semcreate(0);
+	s3 = semcreate(0);
 	
-	if((s1 == (sid32)SYSERR) || (s2 == (sid32)SYSERR))
+	if((s1 == (sid32)SYSERR) || (s2 == (sid32)SYSERR) || (s3 == (sid32)SYSERR))
 	{
 		kprintf("Unable to create semaphore in main \n");
 		return SYSERR;
@@ -186,6 +179,7 @@ process	main(void)
 	
 	resume(p1);
 	resume(p2);
+	resume(p3);
 	
 	return OK;
     
